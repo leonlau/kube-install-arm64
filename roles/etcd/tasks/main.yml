@@ -1,0 +1,34 @@
+---
+
+- name: 创建etcd证书请求
+  template: 
+    src: etcd-csr.json.j2 
+    dest: "{{install_path}}/ssl/etcd-csr.json"
+
+- name: 创建 etcd证书和私钥
+  shell: "cd {{install_path}}/ssl && {{install_path}}/{{modules.cfssl}}/cfssl gencert \
+        -ca={{install_path}}/ssl/ca.pem \
+        -ca-key={{install_path}}/ssl/ca-key.pem \
+        -config={{install_path}}/ssl/ca-config.json \
+        -profile=kubernetes etcd-csr.json | {{install_path}}/{{modules.cfssl}}/cfssljson -bare etcd"
+  notify:
+    - execute daemon-reload
+    - restart etcd
+
+
+- name: configure service etcd's systemd
+  template:
+    src: templates/etcd.service
+    dest: /usr/lib/systemd/system/
+  notify:
+    - execute daemon-reload
+    - restart etcd
+
+- name: configure service etcd's options
+  template:
+    src: templates/etcd
+    dest: /etc/default
+  notify:
+    - execute daemon-reload
+    - restart etcd
+

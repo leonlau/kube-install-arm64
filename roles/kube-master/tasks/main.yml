@@ -1,0 +1,57 @@
+
+- shell: "SERVICE_CLUSTER_IP_RANGE={{service.cidr}} ;echo ${SERVICE_CLUSTER_IP_RANGE%.*}.1"
+  register: result
+- name: defined CLUSTER_KUBERNETES_SVC_IP
+  set_fact:
+    CLUSTER_KUBERNETES_SVC_IP: "{{result.stdout}}"
+
+- name: 创建 kubernetes 证书签名请求
+  template: 
+    src: kubernetes-csr.json.j2 
+    dest: "{{install_path}}/ssl/kubernetes-csr.json"
+
+- name: 创建 kubernetes 证书和私钥
+  shell: "cd {{install_path}}/ssl && {{install_path}}/{{modules.cfssl}}/cfssl gencert \
+        -ca={{install_path}}/ssl/ca.pem \
+        -ca-key={{install_path}}/ssl/ca-key.pem \
+        -config={{install_path}}/ssl/ca-config.json \
+        -profile=kubernetes kubernetes-csr.json | {{install_path}}/{{modules.cfssl}}/cfssljson -bare kubernetes"
+
+- name: create token.csv
+  template: 
+    src: token.csv.j2 
+    dest: "{{install_path}}/ssl/token.csv"
+
+#- name: create basic-auth.csv
+#  template: 
+#    src: basic-auth.csv.j2 
+#    dest: "{{install_path}}/ssl/basic-auth.csv"
+
+- name: create kube-apiserver.yaml
+  template: 
+    src: kube-apiserver.yaml 
+    dest: "{{install_path}}/manifests/"
+
+- name: create kube-controller-manager.yaml
+  template: 
+    src: kube-controller-manager.yaml
+    dest: "{{install_path}}/manifests/"
+
+- name: create kube-scheduler.yaml
+  template: 
+    src: kube-scheduler.yaml 
+    dest: "{{install_path}}/manifests/"
+
+- name: Wait port 6443 to become open on the host
+  wait_for:
+    port: 6443
+    delay: 10
+  run_once: true
+  connection: local
+
+- name:  marker master nodes and no schedule 
+  shell: " kubectl label  nodes {{item.name}}  node-role.kubernetes.io/master=true  --overwrite ; \
+           kubectl taint nodes  {{item.name}}  node-role.kubernetes.io/master=:NoSchedule --overwrite "
+  with_items: "{{master}}"
+  run_once: true
+  connection: local

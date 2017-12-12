@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ""
+  creationTimestamp: null
+  labels:
+    component: kube-scheduler
+    tier: control-plane
+  name: kube-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - kube-scheduler
+    - --address=127.0.0.1
+    - --master=http://127.0.0.1:8080
+    - --leader-elect=true
+    - --v=2
+    image: kylincloud2.hub/kube-scheduler-arm64:v1.8.3
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 10251
+        scheme: HTTP
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    name: kube-scheduler
+    resources:
+      requests:
+        cpu: 100m
+  hostNetwork: true
+status: {}

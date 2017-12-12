@@ -1,0 +1,19 @@
+---
+- name: configure service keepalived's systemd
+  template:
+    src: templates/keepalived.service
+    dest: /usr/lib/systemd/system/
+  notify:
+    - execute daemon-reload
+    - restart keepalived
+
+- name: configure service keepalived's options
+  template:
+    src: templates/keepalived.conf
+    dest: /etc/default
+#  with_items: "{{master}}"
+#  when: ansible_default_ipv4.address==item.ip
+  notify:
+    - execute daemon-reload
+    - restart keepalived
+

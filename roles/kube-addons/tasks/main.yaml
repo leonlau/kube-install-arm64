@@ -1,0 +1,120 @@
+---
+# restart kubelet flash config
+- name: restart kubelet 
+  service: 
+    name: kubelet 
+    enabled: yes 
+    state: restarted
+
+- name: kubelet-bootstrap-setting
+  shell: "kubectl create clusterrolebinding kubelet-bootstrap \
+        --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap"
+  ignore_errors: true
+  run_once: true
+  connection: local
+
+
+## kube-proxy
+ 
+- name: 准备kube-proxy 证书签名请求
+  template: 
+    src: kube-proxy-csr.json.j2 
+    dest: "{{install_path}}/ssl/kube-proxy-csr.json"
+
+- name: 创建 kube-proxy证书与私钥
+  shell: "cd {{install_path}}/ssl && {{install_path}}/{{modules.cfssl}}/cfssl gencert \
+        -ca={{install_path}}/ssl/ca.pem \
+        -ca-key={{install_path}}/ssl/ca-key.pem \
+        -config={{install_path}}/ssl/ca-config.json \
+        -profile=kubernetes kube-proxy-csr.json | {{install_path}}/{{modules.cfssl}}/cfssljson -bare kube-proxy"
+
+#创建kube-proxy.kubeconfig配置文件
+- name: 设置集群参数
+  shell: "kubectl config set-cluster kubernetes \
+        --certificate-authority={{install_path}}/ssl/ca.pem \
+        --embed-certs=true \
+        --server=https://{{vip}}:6443 \
+        --kubeconfig={{install_path}}/kubeconfig/kube-proxy.kubeconfig"
+- name: 设置客户端认证参数
+  shell: "kubectl config set-credentials kube-proxy \
+	--client-certificate={{install_path}}/ssl/kube-proxy.pem \
+	--client-key={{install_path}}/ssl/kube-proxy-key.pem \
+        --embed-certs=true \
+        --kubeconfig={{install_path}}/kubeconfig/kube-proxy.kubeconfig"
+- name: 设置上下文参数
+  shell: "kubectl config set-context default \
+        --cluster=kubernetes \
+        --user=kube-proxy \
+        --kubeconfig={{install_path}}/kubeconfig/kube-proxy.kubeconfig"
+- name: 选择默认上下文
+  shell: "kubectl config use-context default --kubeconfig={{install_path}}/kubeconfig/kube-proxy.kubeconfig"
+
+
+- name: make kube-proxy.yaml
+  template: 
+    src: templates/kube-proxy.yaml
+    dest: "{{install_path}}/yaml/"
+  run_once: true
+  connection: local
+
+- name: apply kube-proxy
+  shell: "{{install_path}}/{{modules.kube}}/kubectl apply -f {{install_path}}/yaml/kube-proxy.yaml"
+  run_once: true
+  connection: local
+
+
+##  kube-DNS
+
+- name: make kube-dns.yaml
+  template: 
+    src: templates/kube-dns.yaml 
+    dest: "{{install_path}}/yaml/"
+  run_once: true
+  connection: local
+- name: apply kube-proxy
+  shell: "{{install_path}}/{{modules.kube}}/kubectl apply -f {{install_path}}/yaml/kube-dns.yaml"
+  run_once: true
+  connection: local
+
+## flannel 
+- name: delete flannel network 
+  shell: "ip link del dev flannel.1; ip link del dev cni0"
+  ignore_errors: true
+
+- name:  make flannel.yaml 
+  template:
+    src: templates/flannel.yaml
+    dest: "{{install_path}}/yaml/"
+  run_once: true
+  connection: local
+
+- name: apply flannel 
+  shell: "{{install_path}}/{{modules.kube}}/kubectl apply -f {{install_path}}/yaml/flannel.yaml"
+  run_once: true
+  connection: local
+
+- name: make dashboard.yaml  
+  copy:
+    src: templates/dashboard.yaml
+    dest: "{{install_path}}/yaml/"
+
+- name: apply dashboard
+  shell: "{{install_path}}/{{modules.kube}}/kubectl apply -f {{install_path}}/yaml/dashboard.yaml"  
+  run_once: true
+  connection: local
+
+- name: make ingress.yaml  
+  copy:
+    src: files/ingress.yaml
+    dest: "{{install_path}}/yaml/"
+
+- name: apply ingress
+  shell: "{{install_path}}/{{modules.kube}}/kubectl apply -f {{install_path}}/yaml/ingress.yaml"  
+  run_once: true
+  connection: local
+
+
+
+  
+
+

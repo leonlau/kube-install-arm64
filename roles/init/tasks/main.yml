@@ -1,0 +1,30 @@
+---
+
+- name: modify hostname 
+  shell: "hostnamectl set-hostname {{item.name}} ; echo {{item.name}}  > /etc/hostname "
+  with_items: 
+    - "{{nodes}}"
+    - "{{master}}"
+  when: ansible_default_ipv4.address==item.ip
+
+- name: add nodes in hosts file
+  template:
+    src: templates/hosts
+    dest: /etc/hosts
+
+- name: mkdir /usr/lib/systemd/system/
+  file:
+    path: /usr/lib/systemd/system/
+    state: directory
+
+- name: mkdir install directory
+  file:
+    path: "{{item}}"
+    state: directory
+  with_items:
+  - "{{install_path}}"
+  - "{{install_path}}/manifests"
+  - "{{install_path}}/yaml"
+  - "{{install_path}}/kubeconfig"
+  - "{{install_path}}/ssl"
+  - "{{install_path}}/cfssl" 

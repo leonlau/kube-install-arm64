@@ -1,0 +1,17 @@
+[Unit]
+Description=etcd
+After=network.target 
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/default/etcd
+Environment=ETCD_UNSUPPORTED_ARCH=arm64
+ExecStart={{install_path}}/{{modules.etcd}}/etcd 
+ExecReload=-/bin/kill -HUP $MAINPID
+KillMode=control-group
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+Alias=etcd.service
+

@@ -1,0 +1,76 @@
+---
+- name: set local_hostname 
+  vars_files:
+    - default.yml
+  hosts: local
+  tasks: 
+  - name: defined local_hostname
+    set_fact:
+      local_hostname: "{{inventory_hostname}}"
+    run_once: true
+  tags:
+    - master 
+    - nodes 
+
+- name: init all nodes
+  hosts: kube-cluster
+  vars_files:
+    - default.yml
+  roles:
+    - init
+    - pkg2nodes
+    - ca 
+    - docker 
+    - kubelet
+  tags:
+    - master 
+    - nodes 
+
+- name: init master nodes 
+  hosts: master
+  vars_files:
+    - default.yml
+  roles:
+    - etcd
+    - kubectl
+    - keepalived
+    - images
+  tags:
+    - master 
+  
+
+- name: install master nodes
+  hosts: master
+  vars_files:
+    - default.yml
+  roles:
+    - kube-master
+#    - images
+####  include: (kube-proxy kube-dns flannel dashboard ingress)
+    - kube-addons  
+  tags:
+    - master 
+
+- name:  install nodes
+  hosts: nodes
+  vars_files:
+    - default.yml
+  roles:
+    - kube-nodes
+  tags:
+    - nodes
+
+- name: marker nodes 
+  vars_files:
+    - default.yml
+  hosts: local
+  tasks: 
+  - name:  marker nodes and enable schedule
+    shell: " kubectl label  nodes {{item.name}}  node-role.kubernetes.io/nodes=true --overwrite ; \
+             kubectl taint nodes  {{item.name}}  node-role.kubernetes.io/master- --overwrite || echo ok "
+    with_items: "{{nodes}}"
+    run_once: true
+  tags:
+    - nodes
+
+

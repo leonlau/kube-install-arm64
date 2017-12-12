@@ -1,0 +1,76 @@
+---
+#创建bootstrap.kubeconfig配置文件
+- name: 设置集群参数
+  shell: "kubectl config set-cluster kubernetes \
+        --certificate-authority={{install_path}}/ssl/ca.pem \
+        --embed-certs=true \
+        --server=https://{{vip}}:6443 \
+        --kubeconfig={{install_path}}/kubeconfig/bootstrap.kubeconfig"
+- name: 设置客户端认证参数
+  shell: "kubectl config set-credentials kubelet-bootstrap \
+        --token={{bootstrap_token}} \
+        --kubeconfig={{install_path}}/kubeconfig/bootstrap.kubeconfig"
+- name: 设置上下文参数
+  shell: "kubectl config set-context default \
+	--cluster=kubernetes \
+	--user=kubelet-bootstrap \
+	--kubeconfig={{install_path}}/kubeconfig/bootstrap.kubeconfig"
+- name: 选择默认上下文
+  shell: "kubectl config use-context default --kubeconfig={{install_path}}/kubeconfig/bootstrap.kubeconfig"
+
+- name: 创建kubelet证书请求
+  template: 
+    src: kubelet-csr.json.j2 
+    dest: "{{install_path}}/ssl/kubelet-csr.json"
+
+- name: 创建 kubelet证书和私钥
+  shell: "cd {{install_path}}/ssl && {{install_path}}/{{modules.cfssl}}/cfssl gencert \
+        -ca={{install_path}}/ssl/ca.pem \
+        -ca-key={{install_path}}/ssl/ca-key.pem \
+        -config={{install_path}}/ssl/ca-config.json \
+        -profile=kubernetes kubelet-csr.json | {{install_path}}/{{modules.cfssl}}/cfssljson -bare kubelet"
+
+#  生成　kubelet.kubeconfig 文件
+- name: 设置集群参数
+  shell: "kubectl config set-cluster kubernetes \
+    --certificate-authority={{install_path}}/ssl/ca.pem \
+    --embed-certs=true \
+    --server=https://{{vip}}:6443 \
+    --kubeconfig={{install_path}}/kubeconfig/kubelet.kubeconfig"
+
+# kubelet set-credentials
+- name: 设置客户端认证参数
+  shell: "kubectl config set-credentials system:node:{{ansible_hostname}} \
+    --client-certificate={{install_path}}/ssl/kubelet.pem \
+    --client-key={{install_path}}/ssl/kubelet-key.pem \
+    --embed-certs=true \
+    --kubeconfig={{install_path}}/kubeconfig/kubelet.kubeconfig"
+
+# kubelet set-context
+- name: 设置上下文参数
+  shell: "kubectl config set-context system:node:{{ansible_hostname}}@kubernetes \
+    --cluster=kubernetes \
+    --user=system:node:{{ansible_hostname}} \
+    --kubeconfig={{install_path}}/kubeconfig/kubelet.kubeconfig"
+
+# kubelet set default context
+- name: 选择默认上下文
+  shell: "kubectl config use-context system:node:{{ansible_hostname}}@kubernetes \
+    --kubeconfig={{install_path}}/kubeconfig/kubelet.kubeconfig"
+
+- name: configure service kubelet's systemd
+  template:
+    src: templates/kubelet.service
+    dest: /usr/lib/systemd/system/
+  notify:
+    - execute daemon-reload
+    - restart kubelet
+
+- name: configure service kubelet's options
+  template:
+    src: templates/kubelet
+    dest: /etc/default
+  notify:
+    - execute daemon-reload
+    - restart kubelet
+

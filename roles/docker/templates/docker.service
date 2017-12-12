@@ -1,0 +1,19 @@
+[Unit]
+Description=Docker-17.05 
+Documentation=https://docs.docker.com
+After=network.target  
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/default/docker
+Environment=PATH={{install_path}}/{{modules.docker}}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WorkingDirectory={{install_path}}/{{modules.docker}}
+ExecStart={{install_path}}/{{modules.docker}}/dockerd  $DOCKER_OPTS  
+LimitNOFILE=1048576
+LimitNPROC=1048576
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

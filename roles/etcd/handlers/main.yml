@@ -1,0 +1,9 @@
+---
+- name: execute daemon-reload
+  shell: systemctl daemon-reload
+- name: restart etcd
+  service: name=etcd enabled=yes state=restarted
+
+
+- name: post etcd
+  shell: sed -i 's/ETCD_INITIAL_CLUSTER_STATE=new/ETCD_INITIAL_CLUSTER_STATE=existing/' /etc/default/etcd

@@ -1,0 +1,32 @@
+
+- name: 准备CA配置文件
+  template: 
+    src: ca-config.json.j2
+    dest: "{{ install_path }}/ssl/ca-config.json"
+  when: local_hostname is  defined
+
+- name: 准备CA签名请求
+  template: 
+    src: ca-csr.json.j2 
+    dest: "{{install_path}}/ssl/ca-csr.json"
+  when: local_hostname is  defined
+
+- name: 生成 CA 证书和私钥
+  shell: "if [ ! -f {{install_path}}/ssl/ca.pem ]; then \
+            cd {{install_path}}/ssl ;\
+            {{install_path}}/{{modules.cfssl}}/cfssl gencert -initca ca-csr.json | {{install_path}}/{{modules.cfssl}}/cfssljson -bare ca; \
+         fi" 
+  when: local_hostname is  defined
+
+
+- name: 分发CA 证书
+  copy: 
+    src: "{{install_path}}/ssl/{{ item }}"
+    dest: "{{install_path}}/ssl/{{ item }}"
+    mode: 0644
+  with_items:
+  - ca.pem
+  - ca-key.pem
+  - ca.csr
+  - ca-config.json
+  when: local_hostname is  undefined

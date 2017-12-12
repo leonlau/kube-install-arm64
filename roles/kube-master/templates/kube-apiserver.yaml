@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ""
+  creationTimestamp: null
+  labels:
+    component: kube-apiserver
+    tier: control-plane
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction 
+    - --secure-port=6443
+#    - --bind-address={{inventory_hostname}}
+    - --insecure-bind-address=127.0.0.1 
+    - --authorization-mode=Node,RBAC 
+    - --kubelet-https=true 
+    - --anonymous-auth=false 
+#    - --basic-auth-file=/etc/kubernetes/pki/basic-auth.csv 
+    - --enable-bootstrap-token-auth 
+    - --token-auth-file=/etc/kubernetes/pki/token.csv 
+    - --service-cluster-ip-range={{service.cidr}} 
+    - --tls-cert-file=/etc/kubernetes/pki/kubernetes.pem 
+    - --tls-private-key-file=/etc/kubernetes/pki/kubernetes-key.pem 
+    - --client-ca-file=/etc/kubernetes/pki/ca.pem 
+    - --service-account-key-file=/etc/kubernetes/pki/ca-key.pem 
+    - --etcd-cafile=/etc/kubernetes/pki/ca.pem 
+    - --etcd-certfile=/etc/kubernetes/pki/kubernetes.pem 
+    - --etcd-keyfile=/etc/kubernetes/pki/kubernetes-key.pem 
+    - --etcd-servers={% for host in master -%}
+https://{{host.ip}}:2379
+{%- if not loop.last -%} 
+ ,
+{%- endif -%}
+{%- endfor %} 
+    - --enable-swagger-ui=true 
+    - --allow-privileged=true 
+    - --audit-log-maxage=30 
+    - --audit-log-maxbackup=3 
+    - --audit-log-maxsize=100
+    - --audit-log-path=/var/lib/audit.log 
+    - --event-ttl=1h 
+    - --v=4
+    image: kylincloud2.hub/kube-apiserver-arm64:v1.8.3
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 8080
+        scheme: HTTP
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    name: kube-apiserver
+    resources:
+      requests:
+        cpu: 250m
+    volumeMounts:
+    - mountPath: /etc/kubernetes/pki
+      name: k8s-certs
+      readOnly: true
+    - mountPath: /etc/ssl/certs
+      name: ca-certs
+      readOnly: true
+    - mountPath: /etc/pki
+      name: ca-certs-etc-pki
+      readOnly: true
+  hostNetwork: true
+  volumes:
+  - hostPath:
+      path: {{install_path}}/ssl
+      type: DirectoryOrCreate
+    name: k8s-certs
+  - hostPath:
+      path: /etc/ssl/certs
+      type: DirectoryOrCreate
+    name: ca-certs
+  - hostPath:
+      path: /etc/pki
+      type: DirectoryOrCreate
+    name: ca-certs-etc-pki
+status: {}

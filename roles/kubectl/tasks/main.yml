@@ -1,0 +1,38 @@
+- name: kubectl 加入环境变量
+  copy: 
+    src: "{{ install_path}}/{{modules.kube}}/kubectl"
+    dest: "/usr/local/bin/kubectl"
+    mode: 0755
+
+- name: 准备kubectl使用的admin 证书签名请求
+  template: 
+    src: admin-csr.json.j2 
+    dest: "{{install_path}}/ssl/admin-csr.json"
+
+- name: 创建 admin证书与私钥
+  shell: "cd {{install_path}}/ssl  && {{install_path}}/{{modules.cfssl}}/cfssl gencert \
+        -ca={{install_path}}/ssl/ca.pem \
+        -ca-key={{install_path}}/ssl/ca-key.pem \
+        -config={{install_path}}/ssl/ca-config.json \
+        -profile=kubernetes admin-csr.json | {{install_path}}/{{modules.cfssl}}/cfssljson -bare admin"
+
+# 创建kubectl kubeconfig 文件
+- name: 设置集群参数
+  shell: "kubectl config set-cluster kubernetes \
+	--certificate-authority={{install_path}}/ssl/ca.pem \
+	--embed-certs=true \
+	--server=https://{{vip}}:6443"
+
+- name: 设置客户端认证参数
+  shell: "kubectl config set-credentials admin \
+	--client-certificate={{install_path}}/ssl/admin.pem \
+	--embed-certs=true \
+	--client-key={{install_path}}/ssl/admin-key.pem"
+
+- name: 设置上下文参数
+  shell: "kubectl config set-context kubernetes \
+	--cluster=kubernetes --user=admin"
+
+- name: 选择默认上下文
+  shell: "kubectl config use-context kubernetes"
+

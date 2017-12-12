@@ -1,0 +1,30 @@
+[Unit]
+Description=kubelet: The Kubernetes Node Agent
+Documentation=http://kubernetes.io/docs/
+
+[Service]
+EnvironmentFile=-/etc/default/kubelet
+ExecStart={{install_path}}/{{modules.kube}}/kubelet  \
+          --pod-infra-container-image=kylincloud2.hub/pause-arm64:3.0 \
+          --v=4  \
+          --fail-swap-on=false \
+          --address={{inventory_hostname }} \
+          --hostname-override={{ansible_nodename}} \
+          --experimental-bootstrap-kubeconfig={{install_path}}/kubeconfig/bootstrap.kubeconfig \
+          --kubeconfig={{install_path}}/kubeconfig/kubelet.kubeconfig \
+          --cert-dir={{install_path}}/ssl \
+          --allow-privileged=true \
+          --logtostderr=true \
+          $KUBELET_KUBECONFIG_ARGS \
+          $KUBELET_SYSTEM_PODS_ARGS \
+          $KUBELET_DNS_ARGS \
+          $KUBELET_AUTHZ_ARGS \
+          $KUBELET_CADVISOR_ARGS \
+          $KUBELET_NETWORK_ARGS 
+Restart=always
+StartLimitInterval=0
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+

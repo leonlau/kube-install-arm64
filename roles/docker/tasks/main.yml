@@ -1,0 +1,30 @@
+---
+- name: remove default docker
+  shell: "dpkg -P docker.io"
+
+- name: configure docker.socket systemd
+  copy:
+    src: files/docker.socket
+    dest: /usr/lib/systemd/system/
+  notify:
+    - execute daemon-reload
+    - restart docker.socket
+
+- name: configure service docker's systemd
+  template:
+    src: templates/docker.service
+    dest: /usr/lib/systemd/system/
+  notify:
+    - execute daemon-reload
+    - restart docker
+
+- name: configure service docker's options
+  template:
+    src: templates/docker
+    dest: /etc/default
+  notify:
+    - execute daemon-reload
+    - execute add  registry  SSL cert
+    - restart docker
+
+
