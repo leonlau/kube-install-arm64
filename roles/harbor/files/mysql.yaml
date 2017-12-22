@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mysql-rc
+  labels:
+    name: mysql-rc
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: mysql-apps
+  template:
+    metadata:
+      labels:
+        name: mysql-apps
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/arch: arm64
+        node-role.kubernetes.io/master: 'true'
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: mysql-app
+        image: kylincloud2.hub/harbor-db:1.2.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3306
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom: 
+              configMapKeyRef: 
+               name: harbor-mysql-config
+               key: MYSQL_ROOT_PASSWORD
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: storage-pvc 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: registry
+spec:
+  ports:
+    - port: 3306
+  selector:
+    name: mysql-apps

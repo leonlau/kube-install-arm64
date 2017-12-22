@@ -1,0 +1,78 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: notary-rc
+  labels:
+    name: notary-rc
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: notary-apps
+  template:
+    metadata:
+      labels:
+        name: notary-apps
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/arch: arm64
+        node-role.kubernetes.io/master: 'true'
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: notary-server
+        image: kylincloud2.hub/harbor-notary-server:1.2.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4443
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: cret
+          mountPath: /root
+      - name: notary-signer
+        image: kylincloud2.hub/harbor-notary-signer:1.2.2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: NOTARY_SIGNER_DEFAULTALIAS
+            valueFrom: 
+              configMapKeyRef: 
+               name: harbor-notary-config
+               key: NOTARY_SIGNER_DEFAULTALIAS
+        ports:
+        - containerPort: 7899
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: harbor-notary-config
+          items:
+          - key: server-config
+            path: server-config.json
+          - key: signer-config
+            path: signer-config.json
+          - key: notary-signer-crt
+            path: notary-signer.crt
+          - key: notary-signer-key
+            path: notary-signer.key
+      - name: cret
+        configMap:
+          name: harbor-registry-config
+          items:
+          - key: cert
+            path: root.crt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notary
+  namespace: registry
+spec:
+  ports:
+    - port: 4443
+  selector:
+    name: notary-apps

@@ -10,7 +10,7 @@
     run_once: true
   tags:
     - master 
-    - nodes 
+    #- nodes 
 
 - name: init all nodes
   hosts: kube-cluster
@@ -24,7 +24,7 @@
     - kubelet
   tags:
     - master 
-    - nodes 
+    #- nodes 
 
 - name: init master nodes 
   hosts: master
@@ -45,11 +45,11 @@
     - default.yml
   roles:
     - kube-master
-#    - images
-####  include: (kube-proxy kube-dns flannel dashboard ingress)
     - kube-addons  
+    - harbor
   tags:
     - master 
+    - harbor
 
 - name:  install nodes
   hosts: nodes

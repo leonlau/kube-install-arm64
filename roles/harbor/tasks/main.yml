@@ -1,0 +1,95 @@
+
+- name: mkdir install directory
+  file:
+    path: "{{item}}"
+    state: directory
+  with_items:
+  - "{{install_path}}/harbor"
+  when: local_hostname is  defined
+
+
+- name: 创建registry证书请求
+  template:
+    src: reg-csr.json
+    dest: "{{install_path}}/ssl/reg-csr.json"
+  when: local_hostname is  defined
+
+
+- name: 创建 registry证书和私钥
+  shell: "cd {{install_path}}/ssl && {{install_path}}/{{modules.cfssl}}/cfssl gencert \
+        -ca={{install_path}}/ssl/ca.pem \
+        -ca-key={{install_path}}/ssl/ca-key.pem \
+        -config={{install_path}}/ssl/ca-config.json \
+        -profile=kubernetes reg-csr.json | {{install_path}}/{{modules.cfssl}}/cfssljson -bare reg"
+  when: local_hostname is  defined
+
+- name: create registry namespace
+  shell: "kubectl get namespace registry || kubectl create namespace registry"
+  when: local_hostname is  defined
+
+- name: add registry secret
+  shell: "kubectl -n registry delete  secret  harbor-secret ; \
+          kubectl -n registry create secret tls  harbor-secret  --key  {{install_path}}/ssl/reg-key.pem  --cert  {{install_path}}/ssl/reg.pem "
+  when: local_hostname is  defined
+
+- name: make  configmap yaml 
+  template:
+    src: "templates/{{item}}"
+    dest: "{{install_path}}/harbor/"
+  with_items:
+    - adminserver.cm.yaml
+    - jobservice.cm.yaml
+    - ui.cm.yaml
+    - registry.cm.yaml
+    - mysql.cm.yaml
+    - notary.cm.yaml
+    - clair.cm.yaml
+    - registry.pv.yaml
+    - storage.pv.yaml
+    - postgresql.pv.yaml
+    - ingress.yaml
+  when: local_hostname is  defined
+
+  
+- name: cpoy harbor yaml
+  copy:
+    src: "files/{{item}}"
+    dest: "{{install_path}}/harbor/"
+  with_items:
+    - adminserver.yaml
+    - jobservice.yaml
+    - ui.yaml
+    - registry.yaml
+    - clair.yaml
+    - mysql.yaml
+    - notary.yaml
+    - registry.pvc.yaml
+    - storage.pvc.yaml
+    - postgresql.pvc.yaml
+  when: local_hostname is  defined
+
+
+- name: create harbor 
+  shell: "kubectl apply -f  {{install_path}}/harbor/"
+  when: local_hostname is  defined
+
+- name: 分发CA 证书
+  copy:
+    src: "{{install_path}}/ssl/ca.pem"
+    dest: "{{item}}"
+    mode: 0644
+  with_items:
+  - "/etc/docker/certs.d/{{registry.domain}}/ca.crt"
+  - "{{ansible_env.HOME}}/.docker/tls/notary.{{registry.domain}}/ca.crt"
+
+- name: set TRUST environment 
+  lineinfile:
+    dest: /etc/profile
+    regexp: '^export DOCKER_CONTENT_TRUST='
+    line: 'export DOCKER_CONTENT_TRUST=1'
+
+- name: set TRUST_SERVER environment 
+  lineinfile:
+    dest: /etc/profile
+    regexp: '^export DOCKER_CONTENT_TRUST_SERVER='
+    line: 'export DOCKER_CONTENT_TRUST_SERVER=https://notary.{{registry.domain}}'

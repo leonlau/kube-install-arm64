@@ -2,7 +2,7 @@ install_path: /usr/local/kylincloud2_arm64   #安装目录
 #
 modules:
   etcd: etcd-3.2.9
-  docker_registry: docker-registry-2.4.1
+  #docker_registry: docker-registry-2.4.1
   docker: docker-17.03
   kube: kube-1.8.3
   keepalived: keepalived-1.3.5
@@ -14,17 +14,21 @@ modules:
 registry:
   domain: kylincloud2.hub
   data_path: /nas/docker-registry
-
+  admin_password: Harbor12345
+  db:
+    host: mysql
+    port: 3306
+    user: root
+    passwd: root123
+  clair_password: password
+# etcd cluster name 
 etcdname: kube-etcd
-
-
-
 #head -c 16 /dev/urandom | od -An -t x | tr -d ' '
 bootstrap_token: c30302226d4b810e08731702d3890f50
-
+ui_url: ui.kylincloud2.hub
 ## NET 
 vip: 192.168.17.211
-virtual_router_id: 74
+virtual_router_id: 73
 service:
   cidr: 10.10.0.0/16
 DNS_ip: 10.10.1.10
@@ -36,8 +40,8 @@ pod_net:
 master:
   - name: k8s-1
     ip: 192.168.17.107
-  - name: k8s-2
-    ip: 192.168.17.240
+#  - name: k8s-2
+#    ip: 192.168.17.240
 #  - name: master2
 #    ip: 192.168.17.108
 #  - name: master2
@@ -46,7 +50,7 @@ master:
 #    ip: 192.168.17.105
 nodes:
   - name: node-1
-    ip: 192.168.17.205
+    ip: 192.168.17.107
 #  - name: agent2
 #    ip: 192.168.17.104 
 

@@ -1,5 +1,12 @@
 ---
 
+- name: defined vip
+  set_fact:
+    vip: "{{inventory_hostname}}"
+  run_once: true
+  connection: local
+  when: vip is  undefined
+ 
 - name: modify hostname 
   shell: "hostnamectl set-hostname {{item.name}} ; echo {{item.name}}  > /etc/hostname "
   with_items: 
@@ -28,3 +35,6 @@
   - "{{install_path}}/kubeconfig"
   - "{{install_path}}/ssl"
   - "{{install_path}}/cfssl" 
+  - "/etc/docker/certs.d/{{registry.domain}}"
+  - "{{ansible_env.HOME}}/.docker/tls/notary.{{registry.domain}}"
+

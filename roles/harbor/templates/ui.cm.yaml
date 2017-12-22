@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: harbor-ui-config
+  namespace: registry
+data:
+  CONFIG_PATH: /etc/ui/app.conf
+  LOG_LEVEL: debug
+  UI_SECRET: "{{ui_secret}}"
+  JOBSERVICE_SECRET: "{{jobservice_secret}}"
+  GODEBUG: netdns=cgo
+  SECRET_KEY: "{{secret_key}}"
+  NOTARY_SERVER_URL: "http://notary:4443"
+  config: |
+    appname = registry
+    runmode = dev
+    [lang]
+    types = en-US|zh-CN
+    names = en-US|zh-CN
+    [dev]
+    httpport = 80
+    [mail]
+    host = smtp.kylincloud.local
+    port = 25
+    username = admin@kylincloud.local
+    password = admin@kylincloud.local
+    from = admin <admin@kylincloud.local>
+    ssl = false
+  pkey: |
+    -----BEGIN RSA PRIVATE KEY-----
+    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
+    -----END RSA PRIVATE KEY-----
+
+

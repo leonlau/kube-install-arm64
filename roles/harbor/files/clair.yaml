@@ -1,0 +1,114 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: postgres-rc
+  labels:
+    name: postgres-rc
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: postgres-apps
+  template:
+    metadata:
+      labels:
+        name: postgres-apps
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/arch: arm64
+        node-role.kubernetes.io/master: 'true'
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: postgresql
+        image: kylincloud2.hub/harbor-postgresql:1.2.2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: POSTGRES_PASSWORD
+            valueFrom: 
+              configMapKeyRef: 
+               name: harbor-clair-config
+               key: POSTGRES_PASSWORD
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgresql-storage
+          mountPath: /var/lib/postgresql/9.5/main
+      volumes:
+      - name: postgresql-storage
+        persistentVolumeClaim:
+          claimName: postgresql-pvc
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: clair-rc
+  labels:
+    name: clair-rc
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: clair-apps
+  template:
+    metadata:
+      labels:
+        name: clair-apps
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/arch: arm64
+        node-role.kubernetes.io/master: 'true'
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: clair
+        image: kylincloud2.hub/harbor-clair:1.2.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: clair-api
+          containerPort: 6060
+        - name: clair-health
+          containerPort: 6061
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: harbor-clair-config
+          items:
+          - key: clair-config
+            path: config.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clair
+  namespace: registry
+spec:
+  ports:
+  - name: clair-api
+    port: 6060
+  - name: clair-health
+    port: 6061
+  selector:
+    name: clair-apps
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: registry
+spec:
+  ports:
+  - port: 5432
+  selector:
+    name: postgres-apps

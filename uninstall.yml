@@ -20,7 +20,8 @@
       path: "{{item}}"
       state: absent
     with_items:
-    - /etc/kubernetes
+    - /etc/default/docker
+    - /usr/local/bin/docker
     - /var/lib/etcd
     - "{{install_path}}/"
     - /run/flannel/subnet.env

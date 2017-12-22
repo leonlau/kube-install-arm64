@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: harbor-notary-config
+  namespace: registry
+data:
+  NOTARY_SIGNER_DEFAULTALIAS: lcKDKBwF
+  server-config: |
+    {
+    	"server": {
+    		"http_addr": ":4443"
+    	},
+    	"trust_service": {
+    		"type": "local"
+    	},
+    	"logging": {
+    		"level": "debug"
+    	},
+    	"storage": {
+    		"backend": "mysql",
+    		"db_url": "server@tcp(mysql:3306)/notaryserver?parseTime=True"
+    	},
+        "auth": {
+            "type": "token",
+            "options": {
+                "realm": "https://{{registry.domain}}/service/token",
+                "service": "harbor-notary",
+                "issuer": "harbor-token-issuer",
+                "rootcertbundle": "/root/root.crt"
+            }
+        }
+    }
+
+  signer-config: | 
+    {
+    	"server": {
+                "tls_cert_file": "/config/notary-signer.crt",
+                "tls_key_file": "/config/notary-signer.key",
+    		"grpc_addr": ":7899"
+
+    	},
+    	"logging": {
+    		"level": "debug"
+    	},
+    	"storage": {
+    		"backend": "mysql",
+    		"db_url": "signer@tcp(mysql:3306)/notarysigner?parseTime=True",
+            "default_alias":"defaultalias"
+    	}
+    }
+
+  notary-signer-key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEA8dfZV9zQWQwEhqHBHDbACaZmMolfWQL1KZe/5adSDKYtVgMH
+    hXrPRMNWDuUQ+1v/eAJNKFyNnUd8weEX/22FJDcWe3gEi/50nEVNU8vNDU/2175g
+    Yt2bxZLKihgsY1JN2XDjEQYaiwWNfbFZAW4PkItxgyaV1Q3xjk9xeL/MvDAHudTp
+    bv//qlcsntK77up1dvu4qtemB3nnyJSnoXX2bCchpatvqRwaHvZy+quBPZGwMisT
+    1aBBGylUa5rbNuVPFMjrZvlmSEmzXRGm7l3/+0v0v6PvrXGWWxntoSNVBqI2c/e0
+    pnOAMyzatWyg3YhM8tuWMShKEkWutZoX3b811QIDAQABAoIBADhloJ6XtNJ/NfL7
+    d6APuHrHnh9834pPYUKgy7RPb5fZjMr5C+D5waoEb2Yrzuj/DDU9PCcEZlXeHN7N
+    kh4TuS+31PtYAp9u6Fyk4KKA7UGEe0jWcX28th293JOVjYxf3h2t8JXAuaHf2p4M
+    JHhr5R9NFVyDO/+iL8mDBzAkcicUDDtjHyhfqSNb8+JXhuvplW8i7feIay0NLOwG
+    zpjzmwOMGrrQWAC8EZBdKBMK8zKHnAvzlFLOJdSk+zcaFNdC6JQ3AziogsYWZUCZ
+    8DFT4Zkg69+24ZVuWcwcw736yFX7dDyyFfMA9dNmtekJodIWgdMTQqS6odd5QY9d
+    iLpAQmECgYEA+tYa6ZT2agr6d8Oo/iMsle/Q2x07agf/BD9MFBoZvwUOMUCh9vu4
+    54MI3I5+TU5Ijopxw3nRnrOVtQvv2/SfySoi7p/CMKwA0p33XgvRe32SAQOuB1ji
+    +rGmi9TzkQByfYQY6UlA0Fvcp/IqZ4eW2P9BaKK4wXoNuYl1tFss9T0CgYEA9tJZ
+    qEmu+MCgnAbXghKOD5+vLU/caTM3hKhCjWbtdjcN+r948zCtg+jRdLeJi4ycY6Su
+    eLzrYnRCkY2TlKbuK9Rge1FptJH/ODwxeJYZBexSd3NZxRTsKBMjSGy3RemdBEMZ
+    Syc2Uxp9uKegt3kDdhpHLunSkg6Ts0xrRp5pPHkCgYBQwxEFNiYkvIYqe3/024Rm
+    fkGD2ySfHhX42xx2uHSjsVABgarkZ+X//Iuk3+hAobzw0BiS9K0OaQoBsec3rcqo
+    rX1z0VJn82mMZroXuLxpA2Q4GWQ2D2N9jidujFEj1b4HNboDmsdYjss789e9X8Ws
+    9nqr4wCTouW6YEzaliSijQKBgQDvfxzQVu8ZIJC31Uu4QxjlwCTS6vMMgU4Vws8R
+    Nhak5rcB4FkUYN99Z6QWhSFJ756wcVN6hJZCal1NrvrM+02P6fvUrSLMu/3SK1Y1
+    lC+jt7QthBhPTAX6vNc3p4YOqKhbQmCAtAPaj5H+Y2lnnlzldIot02UnpE1dZYGS
+    fJPQwQKBgBs199FqC60x6pkGHNdTGVDQei5D2bhgvD3h+0/SMysoj3dD9U9bgBUn
+    3JJetNy4m6wbEgdzKizXiIxIZ3RhDCvqL9AoZ29KDken/Ct65+TcUu/SBpJi5Wf1
+    ZJATB3mBeg12MWfs4tTz7WcfZc1KFejmasXkQhQCvcIh6vCTiiHJ
+    -----END RSA PRIVATE KEY----- 
+  notary-signer-crt: |
+    -----BEGIN CERTIFICATE-----
+    MIID2DCCAsCgAwIBAgIUKnl0APrsdOYjpoBH5SqCp32ZAvwwDQYJKoZIhvcNAQEL
+    BQAwUzELMAkGA1UEBhMCQ04xEDAOBgNVBAgTB0JlaWppbmcxDDAKBgNVBAoTA2s4
+    czEPMA0GA1UECxMGU3lzdGVtMRMwEQYDVQQDEwprdWJlcm5ldGVzMB4XDTE3MTIx
+    NTAyNDkwMFoXDTI3MTIxMzAyNDkwMFowUzELMAkGA1UEBhMCQ04xEDAOBgNVBAgT
+    B0JlaUppbmcxDDAKBgNVBAoTA2s4czEPMA0GA1UECxMGU3lzdGVtMRMwEQYDVQQD
+    EwprdWJlcm5ldGVzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8dfZ
+    V9zQWQwEhqHBHDbACaZmMolfWQL1KZe/5adSDKYtVgMHhXrPRMNWDuUQ+1v/eAJN
+    KFyNnUd8weEX/22FJDcWe3gEi/50nEVNU8vNDU/2175gYt2bxZLKihgsY1JN2XDj
+    EQYaiwWNfbFZAW4PkItxgyaV1Q3xjk9xeL/MvDAHudTpbv//qlcsntK77up1dvu4
+    qtemB3nnyJSnoXX2bCchpatvqRwaHvZy+quBPZGwMisT1aBBGylUa5rbNuVPFMjr
+    ZvlmSEmzXRGm7l3/+0v0v6PvrXGWWxntoSNVBqI2c/e0pnOAMyzatWyg3YhM8tuW
+    MShKEkWutZoX3b811QIDAQABo4GjMIGgMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUE
+    FjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQU
+    sVAa1HRWdYCe6t2m926nIDTZ/yUwHwYDVR0jBBgwFoAUZtjCP1lkjD9jel6G/dpL
+    K1/b6f8wIQYDVR0RBBowGIIQcmVnLm15ZG9tYWluLmNvbYcEfwAAATANBgkqhkiG
+    9w0BAQsFAAOCAQEAc+fiiMVDH8Qh05PWvvvRgrkQ1h5Ui3BFuEqnRvAK+GJDB5oi
+    xtkItaXevZT0RBISPPxOlCxOvT4xgeeBY/qUfzqNA4R5+ZK7ZNGRxg6/weUGewGP
+    RaiZqwGEj43HKPTvH1wnwSy4i4BbEotaEzJ+jfNYBkVX5A1Wah65eWtJEE4t4/WE
+    jETL5kAbT8yWchxBAqAwrL00UBy1BxwoFxUhqozNCelACnOLQvr3d3TNe4+Ow0WY
+    mE29jRfZv9o4Igt0Vh+7LvO8WTNVE1uIhEJGAa+WFa4IneYd20w6xhvp4sgumDFi
+    sstH7p2dGraVJpV5VLCPz76pO0usOdD2S4aiIA==
+    -----END CERTIFICATE-----

@@ -1,0 +1,35 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: harbor-proxy
+  namespace: registry
+spec:
+  tls:
+  - hosts:
+    - notary.{{registry.domain}}
+    - {{registry.domain}}
+    secretName: harbor-secret
+  rules:
+  - host: {{registry.domain}}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: ui
+          servicePort: 80
+      - path: /v2
+        backend:
+          serviceName: registry
+          servicePort: repo
+      - path: /service
+        backend:
+          serviceName: ui
+          servicePort: 80
+  - host: notary.{{registry.domain}}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: notary
+          servicePort: 4443

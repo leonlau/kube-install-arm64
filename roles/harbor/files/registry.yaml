@@ -1,0 +1,62 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: registry-rc
+  labels:
+    name: registry-rc
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: registry-apps
+  template:
+    metadata:
+      labels:
+        name: registry-apps
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/arch: arm64
+        node-role.kubernetes.io/master: 'true'
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: registry-app
+        image: kylincloud2.hub/harbor-registry:1.2.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+        - containerPort: 5001
+        volumeMounts:
+        - name: config
+          mountPath: /etc/docker/registry
+        - name: storage
+          mountPath: /storage
+      volumes:
+      - name: config
+        configMap:
+          name: harbor-registry-config
+          items:
+          - key: config
+            path: config.yml
+          - key: cert
+            path: root.crt
+      - name: storage
+        persistentVolumeClaim:
+          claimName: registry-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: registry
+spec:
+  ports:
+    - name: repo
+      port: 5000
+    - name: debug
+      port: 5001
+  selector:
+    name: registry-apps

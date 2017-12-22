@@ -2,13 +2,25 @@
 - name: remove default docker
   shell: "dpkg -P docker.io"
 
+- name: remove docker.service
+  file:
+    path: /etc/systemd/system/docker.service
+    state: absent
+
+- name: link docker add PATH
+  file:
+    src: "{{install_path}}/{{modules.docker}}/docker"
+    dest: /usr/local/bin/docker
+    state: link 
+  ignore_errors: true
+
 - name: configure docker.socket systemd
   copy:
     src: files/docker.socket
     dest: /usr/lib/systemd/system/
   notify:
     - execute daemon-reload
-    - restart docker.socket
+    - restart docker
 
 - name: configure service docker's systemd
   template:
@@ -24,7 +36,7 @@
     dest: /etc/default
   notify:
     - execute daemon-reload
-    - execute add  registry  SSL cert
     - restart docker
+    - execute add  registry  SSL cert
 
 
