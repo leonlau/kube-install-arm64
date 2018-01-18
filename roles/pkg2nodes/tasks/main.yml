@@ -1,9 +1,4 @@
 ---
-#- name: mkdir install directory
-#  file:
-#    path: "{{install_path}}"
-#    state: directory
-#
 - name: distribute service binary packages to all nodes 
   unarchive:
     src: "files/{{item.value}}.tar.gz"

@@ -11,4 +11,4 @@ spec:
       storage: 5Gi
   selector:
     matchLabels:
-      type: storage
+      type: postgresql-data

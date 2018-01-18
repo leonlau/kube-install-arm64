@@ -1,11 +1,10 @@
 ---
-#- name: mkdir install directory
-#  file:
-#    path: "{{install_path}}"
-#    state: directory
-#
-#- name: load images in local nodes 
-#  shell: "docker load -i /{{item}}"
-#  with_fileglob:
-#    -  "files/*"
+
+- name: copy images to all nodes
+  copy:
+    src: "files/"
+    dest: /tmp  
+
+- name: load images in local nodes
+  shell: "for i in `ls /tmp/*.tar` ; do docker load -i $i ; done"
 

@@ -24,7 +24,7 @@ data:
         # Deadline before an API request will respond with a 503
         timeout: 300s
       updater:
-        interval: 12h
+        interval: 0
     
       notifier:
         attempts: 3

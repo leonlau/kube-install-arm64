@@ -3,7 +3,7 @@ kind: PersistentVolume
 metadata:
   name: postgresql-pv
   labels:
-    type: storage
+    type: postgresql-data
   namespace: registry
 spec:
   capacity:

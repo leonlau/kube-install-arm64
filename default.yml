@@ -9,6 +9,7 @@ modules:
   cni: cni-arm64
   cfssl: cfssl-1.2.0
 
+ 
 
 # docker_registry 
 registry:
@@ -28,7 +29,7 @@ bootstrap_token: c30302226d4b810e08731702d3890f50
 ui_url: ui.kylincloud2.hub
 ## NET 
 vip: 192.168.17.211
-virtual_router_id: 73
+virtual_router_id: 48
 service:
   cidr: 10.10.0.0/16
 DNS_ip: 10.10.1.10
@@ -40,17 +41,17 @@ pod_net:
 master:
   - name: k8s-1
     ip: 192.168.17.107
-#  - name: k8s-2
-#    ip: 192.168.17.240
-#  - name: master2
-#    ip: 192.168.17.108
+  - name: k8s-2
+    ip: 192.168.17.104
+  - name: k8s-3
+    ip: 192.168.17.96
 #  - name: master2
 #    ip: 192.168.17.104
 #  - name: master3
 #    ip: 192.168.17.105
 nodes:
   - name: node-1
-    ip: 192.168.17.107
+    ip: 192.168.17.103
 #  - name: agent2
-#    ip: 192.168.17.104 
+#    ip: 192.168.17.106 
 

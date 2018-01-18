@@ -10,7 +10,6 @@
     run_once: true
   tags:
     - master 
-    #- nodes 
 
 - name: init all nodes
   hosts: kube-cluster
@@ -19,12 +18,13 @@
   roles:
     - init
     - pkg2nodes
-    - ca 
     - docker 
+#    - images
+    - ca 
+    - kubectl
     - kubelet
   tags:
     - master 
-    #- nodes 
 
 - name: init master nodes 
   hosts: master
@@ -32,9 +32,7 @@
     - default.yml
   roles:
     - etcd
-    - kubectl
     - keepalived
-    - images
   tags:
     - master 
   

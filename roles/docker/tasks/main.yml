@@ -37,6 +37,8 @@
   notify:
     - execute daemon-reload
     - restart docker
-    - execute add  registry  SSL cert
+#    - execute add  registry  SSL cert
 
+- name: make sure the docker is running 
+  shell: "systemctl restart docker"
 
